@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ImageSearch</string>
+    <string name="textSearch">Enter image text</string>
+    <string name="textButton">Search</string>
+    <string name="cache_dirname">ImgApp_Cache</string>
+    <string name="offline">Offline. Connect to internet.</string>
+    <string name="title_dialog">Info!</string>
+</resources>
