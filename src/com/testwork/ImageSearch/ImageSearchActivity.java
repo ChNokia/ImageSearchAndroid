@@ -138,13 +138,15 @@ public class ImageSearchActivity extends Activity implements OnClickListener, Ad
     }
 
     public class SearchImagesTask extends AsyncTask<Void, Void, Void> {
+        private final int MAX_NUMBER_IMAGE_RESPONSE = 64;
+        private final int NUMBER_IMAGE_RESPONSE = 8;
         private ProgressDialog dialogWait;
-        private JSONObject jsonDataImage;
+        private JSONArray jsonArrayDataImage;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
-
+            jsonArrayDataImage = new JSONArray();
             dialogWait = ProgressDialog.show(ImageSearchActivity.this, "", "Wait...");
         }
 
@@ -154,20 +156,30 @@ public class ImageSearchActivity extends Activity implements OnClickListener, Ad
 
             try
             {
-                url = new URL("https://ajax.googleapis.com/ajax/services/search/images?" +
-                    "v=1.0&q=" + textSearch + "&rsz=8");
+                for ( int i = 0; i < MAX_NUMBER_IMAGE_RESPONSE; i += NUMBER_IMAGE_RESPONSE ) {
+                    url = new URL("https://ajax.googleapis.com/ajax/services/search/images?" +
+                            "v=1.0&q=" + textSearch + "&start=" + i + "&rsz=" + NUMBER_IMAGE_RESPONSE);
 
-                URLConnection connection = url.openConnection();
+                    URLConnection connection = url.openConnection();
 
-                String line;
-                StringBuilder builder = new StringBuilder();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                    String line;
+                    StringBuilder builder = new StringBuilder();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 
-                while((line = reader.readLine()) != null) {
-                    builder.append(line);
+                    while ((line = reader.readLine()) != null) {
+                        builder.append(line);
+                    }
+
+                    //System.out.println(builder.toString());
+                    JSONObject jsonDataImage = new JSONObject(builder.toString());
+                    JSONObject responseData = jsonDataImage.getJSONObject("responseData");
+                    JSONArray resultArray = responseData.getJSONArray("results");
+
+                    for ( int j = 0; j < resultArray.length(); j++ ) {
+                        JSONObject obj = resultArray.getJSONObject(j);
+                        jsonArrayDataImage.put(obj);
+                    }
                 }
-
-                jsonDataImage = new JSONObject(builder.toString());
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             } catch (JSONException e) {
@@ -187,18 +199,14 @@ public class ImageSearchActivity extends Activity implements OnClickListener, Ad
                 dialogWait.dismiss();
             }
 
-            try {
-                JSONObject responseData = jsonDataImage.getJSONObject("responseData");
-                JSONArray resultArray = responseData.getJSONArray("results");
+            //JSONObject responseData = jsonDataImage.getJSONObject("responseData");
+            // JSONArray resultArray = responseData.getJSONArray("results");
 
-                imageDataList = getImageDataList(resultArray);
+            imageDataList = getImageDataList(jsonArrayDataImage);
 
-                imagesDB.addListImageData(imageDataList);
+            imagesDB.addListImageData(imageDataList);
 
-                SetListViewAdapter(imageDataList);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            SetListViewAdapter(imageDataList);
         }
     }
 }
